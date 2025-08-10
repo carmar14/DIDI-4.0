@@ -7,7 +7,7 @@ import time
 # ===============================
 # Generar laberinto aleatorio
 # ===============================
-def generate_maze(rows, cols):
+def generate_maze(rows, cols, extra_paths=0.1):
     maze = np.ones((rows, cols), dtype=int)  # 1 = pared
     start = (1, 1)
     maze[start] = 0
@@ -28,6 +28,12 @@ def generate_maze(rows, cols):
                 break
         if not carved:
             stack.pop()
+    # Añadir caminos extra para romper la unicidad
+    for r in range(1, rows - 1):
+        for c in range(1, cols - 1):
+            if maze[r, c] == 1 and random.random() < extra_paths:
+                maze[r, c] = 0
+
     return maze
 
 # ===============================
@@ -146,7 +152,7 @@ def draw_maze(maze, evader, chaser):
 # Simulación
 # ===============================
 rows, cols = 21, 21
-maze = generate_maze(rows, cols)
+maze = generate_maze(rows, cols, extra_paths=0.15)
 
 # Posiciones iniciales
 evader_pos = (1, 1)
@@ -167,12 +173,20 @@ for step in range(200):
     new_chaser = chaser_move(maze, chaser_pos, new_evader)
 
     evader_pos, chaser_pos = new_evader, new_chaser
+    print("posicion del evasor: ",evader_pos)
 
     # Chequear captura
     if chaser_pos == evader_pos:
         plt.clf()
         draw_maze(maze, evader_pos, chaser_pos)
         plt.title("¡Capturado!", fontsize=16)
+        plt.ioff()
+        plt.show()
+        break
+    if evader_pos == (rows - 2, cols - 2):
+        plt.clf()
+        draw_maze(maze, evader_pos, chaser_pos)
+        plt.title("¡Escapó!", fontsize=16)
         plt.ioff()
         plt.show()
         break

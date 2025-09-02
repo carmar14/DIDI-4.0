@@ -162,12 +162,13 @@ def chaser_move(maze, chaser, evader):
 # ===============================
 # Visualización
 # ===============================
-def draw_maze(maze, evader, chaser):
+def draw_maze(maze, evader, chaser, title='Simulacion', step=0):
     display = np.copy(maze)
     display[evader] = 2  # Evadidor
     display[chaser] = 3  # Perseguidor
     cmap = plt.cm.get_cmap("tab20", 4)
     plt.imshow(display, cmap=cmap, vmin=0, vmax=3)
+    plt.title(f"{title} - Paso {step}")
     plt.axis("off")
     plt.pause(0.1)
 

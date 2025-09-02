@@ -23,6 +23,7 @@ class SimulationMetrics:
     def get_escape_rate(self):
         return (self.escapes / self.episodes * 100) if self.episodes > 0 else 0.0
 
+
 # ===============================
 # Generar laberinto aleatorio
 # ===============================
@@ -60,13 +61,16 @@ def generate_maze(rows, cols, extra_paths=0.15, seed=None):
 
     return maze
 
+
 # ===============================
 # Utilidades de movimiento
 # ===============================
 moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
+
 def in_bounds(r, c, maze):
     return 0 <= r < maze.shape[0] and 0 <= c < maze.shape[1]
+
 
 def bfs_path(maze, start, goal):
     queue = deque([start])
@@ -87,13 +91,16 @@ def bfs_path(maze, start, goal):
         cur = visited[cur]
     return path[::-1]
 
+
 def manhattan_dist(a, b):
     return abs(a[0] - b[0]) + abs(a[1] - b[1])
-# ===============================
-# Evasor mejorado
-# ===============================
 
-def evader_move(maze, evader, chaser, memory, lookahead=2):
+
+# ===============================
+# Evasor original
+# ===============================
+def evader_move(maze, evader, chaser, memory, **kwargs):
+    lookahead = kwargs.get('lookahead', 2)
     candidates = []
     max_score = -1
 
@@ -125,6 +132,7 @@ def evader_move(maze, evader, chaser, memory, lookahead=2):
                 candidates.append((nr, nc))
     # Elegir aleatoriamente en caso de empate
     return random.choice(candidates) if candidates else evader
+
 
 def _best_next_step(maze, pos, chaser):
     best_move = pos
@@ -243,7 +251,6 @@ def emergency_move(maze, evader, chaser, memory_set):
                 best_move = (nr, nc)
 
     return best_move
-'''
 
 
 def chaser_move(maze, chaser, evader):
@@ -251,6 +258,7 @@ def chaser_move(maze, chaser, evader):
     if len(path) > 1:
         return path[1]
     return chaser
+
 
 # ===============================
 # Visualización
@@ -265,47 +273,107 @@ def draw_maze(maze, evader, chaser, title='Simulacion', step=0):
     plt.axis("off")
     plt.pause(0.1)
 
+
 # ===============================
 # Simulación
 # ===============================
-rows, cols = 21, 21
-maze = generate_maze(rows, cols, extra_paths=0.15)
-
-# Posiciones iniciales
-evader_pos = (1, 1)
-chaser_pos = (rows - 2, cols - 2)
-evader_memory = deque(maxlen=5)
-
-plt.figure(figsize=(6, 6))
-plt.ion()
-
-for step in range(200):
-    plt.clf()
-    draw_maze(maze, evader_pos, chaser_pos)
-
-    # Mover evasor y perseguidor
-    evader_memory.append(evader_pos)
-    #new_evader = evader_move(maze, evader_pos, chaser_pos)
-    new_evader = evader_move(maze, evader_pos, chaser_pos, evader_memory, lookahead=2)
-    new_chaser = chaser_move(maze, chaser_pos, new_evader)
-
-    evader_pos, chaser_pos = new_evader, new_chaser
-    print("posicion del evasor: ",evader_pos)
-
-    # Chequear captura
-    if chaser_pos == evader_pos:
-        plt.clf()
-        draw_maze(maze, evader_pos, chaser_pos)
-        plt.title("¡Capturado!", fontsize=16)
+def run_simulation(strategy_func, strategy_name, num_episodes=10, max_steps=200,
+                   maze_seed=None, visual=False, rows=21, cols=21, **strategy_kwargs):
+    metrics = SimulationMetrics()
+    if visual:
+        plt.figure(figsize=(8, 8))
+        plt.ion()
+    for episode in range(num_episodes):
+        episode_seed = maze_seed + episode if maze_seed is not None else None
+        maze = generate_maze(rows, cols, seed=episode_seed)
+        evader_pos = (1, 1)
+        chaser_pos = (maze.shape[0]-2, maze.shape[1]-2)
+        goal_pos = (maze.shape[0]-2, maze.shape[1]-2)
+        evader_memory = deque(maxlen=5)
+        total_distance = 0.0
+        for step in range(max_steps):
+            if visual:
+                plt.clf()
+                draw_maze(maze, evader_pos, chaser_pos,
+                          f"{strategy_name} - Episodio {episode+1}", step)
+            distance = manhattan_dist(evader_pos, chaser_pos)
+            total_distance += distance
+            evader_memory.append(evader_pos)
+            new_evader = strategy_func(maze, evader_pos, chaser_pos, evader_memory,
+                                       goal=goal_pos, **strategy_kwargs)
+            new_chaser = chaser_move(maze, chaser_pos, new_evader)
+            evader_pos, chaser_pos = new_evader, new_chaser
+            if chaser_pos == evader_pos:
+                metrics.add_episode(step + 1, False)
+                break
+            elif evader_pos == goal_pos:
+                metrics.add_episode(step + 1, True)
+                break
+        else:
+            metrics.add_episode(max_steps, False)
+    if visual:
         plt.ioff()
-        plt.show()
-        break
-    if evader_pos == (rows - 2, cols - 2):
-        plt.clf()
-        draw_maze(maze, evader_pos, chaser_pos)
-        plt.title("¡Escapó!", fontsize=16)
-        plt.ioff()
-        plt.show()
-        break
+        plt.close()
+    return metrics
 
-    time.sleep(0.05)
+
+# ===============================
+# Función principal de testing
+# ===============================
+def main():
+    print("=== Simulador de Persecución - Comparación de Estrategias ===\n")
+    rows, cols = 21, 21  # Dimensiones del laberinto
+    num_episodes = 500  # Episodios de prueba para cada estrategia
+    max_steps = 200  # Máximo de pasos
+    maze_seed = 53  # Semilla para la generación de laberintos
+
+    print("Ejecutando estrategia original...")
+    metrics_original = run_simulation(
+        evader_move,
+        "Estrategia Original",
+        num_episodes=num_episodes,
+        max_steps=max_steps,
+        maze_seed=maze_seed,
+        visual=False,  # Cambiar a True para visualizar cada episodio
+        lookahead=2,
+        rows=rows,
+        cols=cols
+    )
+    print("Ejecutando estrategia A*...")
+    metrics_astar = run_simulation(
+        evader_strategy_astar,
+        "A*",
+        num_episodes=num_episodes,
+        max_steps=max_steps,
+        maze_seed=maze_seed,
+        visual=False,  # Cambiar a True para visualizar cada episodio
+        safety_weight=30,  # A mayor safety_weight, la tasa de escape aumenta
+        rows=rows,
+        cols=cols
+    )
+    print("\n=== RESULTADOS ===")
+    print("Estrategia Original:")
+    print(f"  Episodios: {metrics_original.episodes}")
+    print(f"  Escapes: {metrics_original.escapes}")
+    print(f"  Capturas: {metrics_original.captures}")
+    print(f"  Tasa: {metrics_original.get_escape_rate():.1f}%")
+    print("\nEstrategia A*:")
+    print(f"  Episodios: {metrics_astar.episodes}")
+    print(f"  Escapes: {metrics_astar.escapes}")
+    print(f"  Capturas: {metrics_astar.captures}")
+    print(f"  Tasa: {metrics_astar.get_escape_rate():.1f}%")
+    print(f"\n=== COMPARACIÓN ===")
+
+    original_rate = metrics_original.get_escape_rate()
+    astar_rate = metrics_astar.get_escape_rate()
+    print(
+        f"Original vs A*: {astar_rate - original_rate:+.1f} puntos porcentuales")
+    if original_rate > 0:
+        relative_improvement = (
+            astar_rate - original_rate) / original_rate * 100
+        print(f"Mejora relativa: {relative_improvement:+.1f}%")
+    return metrics_original, metrics_astar
+
+
+if __name__ == "__main__":
+    main()

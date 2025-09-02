@@ -2,7 +2,25 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 from collections import deque
-import time
+
+
+class SimulationMetrics:
+    """Clase para recopilar métricas básicas de la simulación"""
+
+    def __init__(self):
+        self.escapes = 0
+        self.captures = 0
+        self.episodes = 0
+
+    def add_episode(self, steps, escaped):
+        self.episodes += 1
+        if escaped:
+            self.escapes += 1
+        else:
+            self.captures += 1
+
+    def get_escape_rate(self):
+        return (self.escapes / self.episodes * 100) if self.episodes > 0 else 0.0
 
 # ===============================
 # Generar laberinto aleatorio

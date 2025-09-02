@@ -25,7 +25,12 @@ class SimulationMetrics:
 # ===============================
 # Generar laberinto aleatorio
 # ===============================
-def generate_maze(rows, cols, extra_paths=0.1):
+def generate_maze(rows, cols, extra_paths=0.15, seed=None):
+    """Genera laberinto con semilla opcional para reproducibilidad"""
+    if seed is not None:
+        random.seed(seed)
+        np.random.seed(seed)
+
     maze = np.ones((rows, cols), dtype=int)  # 1 = pared
     start = (1, 1)
     maze[start] = 0

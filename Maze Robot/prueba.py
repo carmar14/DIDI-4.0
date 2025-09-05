@@ -198,7 +198,7 @@ def improved_heuristic(neighbor, goal, chaser, safety_weight):
 
     # Penalización suave por peligro que mantiene admisibilidad
     if chaser_distance <= 3:
-        danger_penalty = (4 - chaser_distance) * (safety_weight * 0.3)
+        danger_penalty = (4 - chaser_distance) * (safety_weight * 3)
         return goal_distance + danger_penalty
     else:
         return goal_distance
@@ -267,11 +267,11 @@ def draw_maze(maze, evader, chaser, title='Simulacion', step=0):
     display = np.copy(maze)
     display[evader] = 2  # Evadidor
     display[chaser] = 3  # Perseguidor
-    cmap = plt.cm.get_cmap("tab20", 4)
+    cmap = plt.colormaps.get_cmap("tab20")
     plt.imshow(display, cmap=cmap, vmin=0, vmax=3)
     plt.title(f"{title} - Paso {step}")
     plt.axis("off")
-    plt.pause(0.1)
+    plt.pause(0.5)
 
 
 # ===============================
@@ -347,7 +347,7 @@ def main():
         max_steps=max_steps,
         maze_seed=maze_seed,
         visual=False,  # Cambiar a True para visualizar cada episodio
-        safety_weight=30,  # A mayor safety_weight, la tasa de escape aumenta
+        safety_weight=10,  # Rango entre 1-10 más de ahi no mejora significativamente
         rows=rows,
         cols=cols
     )

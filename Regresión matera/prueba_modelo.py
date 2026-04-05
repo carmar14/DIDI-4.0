@@ -4,6 +4,12 @@ from tensorflow.keras.models import load_model
 model = load_model("model/modelo_mlp.keras")
 scaler_X = joblib.load("model/scaler_X.pkl")
 scaler_y = joblib.load("model/scaler_y.pkl")
+
+print("mean:", scaler_X.mean_)
+print("std:", scaler_X.scale_)
+
+print("mean:", scaler_y.mean_)
+print("std:", scaler_y.scale_)
 '''
 features = [
     'Soil_Moisture',
@@ -21,7 +27,7 @@ features = [
 '''
 
 # Nueva muestra
-new_data = [[27.8, 22.3, 20, 5.5, 6, 5.4, 1, 4.58, 3.9, 3.57, 9.41]]
+new_data = [[27.8, 22.3, 20, 5.5, 600, 5.4, 1, 4.58, 3.9, 3.57, 9.41]]
 
 # Escalar
 new_data_scaled = scaler_X.transform(new_data)

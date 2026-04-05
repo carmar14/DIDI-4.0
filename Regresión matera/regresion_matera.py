@@ -137,3 +137,9 @@ for i, name in enumerate(targets):
     plt.title(name)
     plt.grid()
     plt.show()
+
+model.save('model/modelo_mlp.keras')
+import joblib
+
+joblib.dump(scaler_X, "model/scaler_X.pkl")
+joblib.dump(scaler_y, "model/scaler_y.pkl")

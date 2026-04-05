@@ -19,6 +19,16 @@ import tensorflow as tf
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 
+def create_time_lagged_data(X, y, lag=1):
+    X_lagged = []
+    y_lagged = []
+
+    for i in range(lag, len(X)):
+        X_lagged.append(X[i-lag])
+        y_lagged.append(y[i])
+
+    return np.array(X_lagged), np.array(y_lagged)
+
 #----cargar dataset-----
 df = pd.read_csv("plant_health_data.csv")
 print(df.head())
@@ -59,12 +69,24 @@ scaler_y = StandardScaler()
 X_scaled = scaler_X.fit_transform(X)
 y_scaled = scaler_y.fit_transform(y)
 
+X_lagged, y_lagged = create_time_lagged_data(X_scaled, y_scaled, lag=1)
+
+#-----no tiene sentido en una serie temporal----
 #---------division de dataset----
 X_train, X_test, y_train, y_test = train_test_split(
     X_scaled, y_scaled,
     test_size=0.2,
     random_state=42
 )
+#---------division de dataset----
+
+split = int(0.8 * len(X_lagged))
+
+X_train = X_lagged[:split]
+X_test  = X_lagged[split:]
+
+y_train = y_lagged[:split]
+y_test  = y_lagged[split:]
 #---------arquitectura mlp----
 model = Sequential([
     Dense(16, activation='relu', input_shape=(X_train.shape[1],)),

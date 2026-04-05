@@ -85,7 +85,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 '''
 split = int(0.8 * len(X_lagged))
 
-X_train = X_lagged[:split]
+X_train = X_lagged[:split] 
 X_test  = X_lagged[split:]
 
 y_train = y_lagged[:split]
